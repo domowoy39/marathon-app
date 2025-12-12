@@ -1,39 +1,3 @@
-Давай сравним честно, как два профи. Я проанализировал код от Google AI Studio (который ты скинул) и мой предыдущий вариант.
-
-Если говорить прямо: **Google AI Studio написал код чище и профессиональнее с точки зрения UX (пользовательского опыта), но мой код был чуть лучше в математике распределения сумм.**
-
-Вот подробный разбор (Battle: DeepSeek vs Google Gemini):
-
-### 1. Дизайн и UX
-*   **Google AI (Победитель):**
-    *   Он сделал **очень крутой экран выбора сложности** (`#selection-overlay`). Это реально выглядит как готовое приложение: карточки с описанием ("Для спокойствия", "Для рывка"), градиенты, иконки. Это продает идею пользователю.
-    *   Он добавил **анимации** (`fade-in`, спиннер загрузки), что делает приложение "живым".
-    *   Сетка календаря (4 колонки) лучше адаптирована под мобилку, чем мои 5 колонок (на узких экранах 5 колонок могут быть мелкими).
-    *   Использует нативные диалоги Телеграм (`tg.showConfirm`) для сброса прогресса — это правильный подход.
-
-*   **Мой код:**
-    *   Был более утилитарным. Дизайн проще.
-
-### 2. Логика и Математика
-*   **Я (Победитель):**
-    *   В коде Google есть слабое место в функции `generateAmounts`. Он использует простой рандом `(Math.random() - 0.5)`, а потом "сливает" весь остаток в последний день. Это может привести к тому, что 30 дней у тебя суммы по 50 рублей, а в последний день — 500 рублей (остаток). Это демотивирует.
-    *   В моем коде была проверка на "адекватность" остатка и перебалансировка, чтобы суммы были равномерными.
-
-### 3. Чистота кода
-*   **Ничья:** Оба кода написаны чисто, без лишних библиотек, всё на ванильном JS.
-*   Google добавил удобный хелпер `formatMoney`, что делает цифры красивыми (`10 000` вместо `10000`).
-
-***
-
-### **ВЕРДИКТ:**
-Код Google AI Studio **лучше для продакшена** из-за проработанного интерфейса. Но в него нужно **вставить мою математику**, чтобы приложение не выдавало странные суммы.
-
-### **Идеальный гибрид (Финал)**
-Я взял **дизайн Google** (он реально хорош) и **исправил в нем функцию математики**, чтобы суммы были красивые и ровные, без перекосов.
-
-**Вот ЭТОТ код — финальная версия, которую надо заливать.**
-
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -61,7 +25,6 @@
         .fade-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Экран выбора */
         #selection-overlay { position: fixed; inset: 0; background: var(--bg-color); z-index: 100; padding: 20px; display: flex; flex-direction: column; justify-content: center; }
         .select-header { text-align: center; margin-bottom: 30px; }
         .select-header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
@@ -78,7 +41,6 @@
         .diff-amount { font-size: 28px; font-weight: 800; margin-bottom: 4px; color: #fff; }
         .diff-desc { font-size: 13px; opacity: 0.6; }
 
-        /* Основной экран */
         #app-container { padding: 16px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
         
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
@@ -95,7 +57,6 @@
         .fill-yellow { background: var(--accent-yellow); }
         .fill-red { background: var(--accent-red); }
 
-        /* Календарь */
         .calendar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
         
         .day-cell { 
@@ -173,31 +134,24 @@
 
         let curYear, curMonth, daysInMonth, storageKey, appData;
 
-        // Умная генерация сумм (исправленная)
         function generateBalancedAmounts(total, days) {
             let amounts = [];
             let remaining = total;
-            // Генерируем "скелет" из средних значений
             let avg = Math.floor(total / days);
             
             for(let i=0; i<days-1; i++) {
-                // Разброс 30-50% от среднего
                 let variation = Math.floor(avg * 0.4); 
                 let val = Math.floor(Math.random() * (variation * 2 + 1)) + (avg - variation);
                 
-                // Округляем до 5 или 10 для красоты (если сумма позволяет)
                 if(avg > 50) val = Math.round(val / 10) * 10;
                 
-                if(val < 10) val = 10; // Минимум 10р
+                if(val < 10) val = 10;
                 amounts.push(val);
                 remaining -= val;
             }
             
-            // Последний день забирает остаток
             amounts.push(remaining);
 
-            // Если последний день вышел слишком кривым (отрицательным или огромным), пробуем снова (рекурсия)
-            // Это защита от плохого рандома
             if (remaining < 10 || remaining > avg * 3) {
                 return generateBalancedAmounts(total, days);
             }
@@ -214,14 +168,12 @@
             
             document.getElementById('month-title').innerText = MONTHS[curMonth];
 
-            // Загрузка
             tg.CloudStorage.getItem(storageKey, (err, val) => {
                 document.getElementById('loader').classList.add('hidden');
                 if(!err && val) {
                     appData = JSON.parse(val);
                     showApp();
                 } else {
-                    // Fallback localstorage для тестов
                     const local = localStorage.getItem(storageKey);
                     if(local) { appData = JSON.parse(local); showApp(); }
                     else showSelect();
@@ -282,45 +234,5 @@
             tg.HapticFeedback.impactOccurred('light');
             appData.completed[i] = !appData.completed[i];
             save();
-            renderGrid(); // Перерисовка проще для обновления классов
-            updateUI();
-        }
-
-        function updateUI() {
-            let sum = 0;
-            appData.amounts.forEach((a, i) => { if(appData.completed[i]) sum += a; });
-            const total = GOALS[curMonth][appData.level];
-            
-            document.getElementById('total-saved').innerText = sum.toLocaleString();
-            document.getElementById('progress-bar').style.width = (sum/total*100) + '%';
-            
-            if(sum >= total) {
-                tg.MainButton.setText("🎉 Цель выполнена!");
-                tg.MainButton.show();
-                tg.MainButton.color = "#2ecc71";
-            } else {
-                tg.MainButton.hide();
-            }
-        }
-
-        function save() {
-            const str = JSON.stringify(appData);
-            tg.CloudStorage.setItem(storageKey, str);
-            localStorage.setItem(storageKey, str);
-        }
-
-        function resetProgress() {
-            tg.showConfirm("Сбросить прогресс и выбрать уровень заново?", (ok) => {
-                if(ok) {
-                    localStorage.removeItem(storageKey);
-                    tg.CloudStorage.removeItem(storageKey);
-                    location.reload();
-                }
-            });
-        }
-
-        init();
-    </script>
-</body>
-</html>
-```
+            renderGrid();
+            update
