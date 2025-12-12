@@ -235,4 +235,43 @@
             appData.completed[i] = !appData.completed[i];
             save();
             renderGrid();
-            update
+            UI();
+        }
+
+        function updateUI() {
+            let sum = 0;
+            appData.amounts.forEach((a, i) => { if(appData.completed[i]) sum += a; });
+            const total = GOALS[curMonth][appData.level];
+            
+            document.getElementById('total-saved').innerText = sum.toLocaleString();
+            document.getElementById('progress-bar').style.width = (sum/total*100) + '%';
+            
+            if(sum >= total) {
+                tg.MainButton.setText("🎉 Цель выполнена!");
+                tg.MainButton.show();
+                tg.MainButton.color = "#2ecc71";
+            } else {
+                tg.MainButton.hide();
+            }
+        }
+
+        function save() {
+            const str = JSON.stringify(appData);
+            tg.CloudStorage.setItem(storageKey, str);
+            localStorage.setItem(storageKey, str);
+        }
+
+        function resetProgress() {
+            tg.showConfirm("Сбросить прогресс и выбрать уровень заново?", (ok) => {
+                if(ok) {
+                    localStorage.removeItem(storageKey);
+                    tg.CloudStorage.removeItem(storageKey);
+                    location.reload();
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
