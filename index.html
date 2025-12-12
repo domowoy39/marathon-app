@@ -1,4 +1,3 @@
-127
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -125,7 +124,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        127const GOALS = {
+        const GOALS = {
             0: [2000, 4000, 10000], 1: [3000, 7000, 20000], 2: [4000, 10000, 30000],
             3: [5000, 15000, 45000], 4: [6000, 20000, 60000], 5: [7000, 25000, 75000],
             6: [8000, 30000, 90000], 7: [9000, 35000, 105000], 8: [10000, 40000, 120000],
@@ -236,7 +235,7 @@
             appData.completed[i] = !appData.completed[i];
             save();
             renderGrid();
-            UI();
+            updateUI();
         }
 
         function updateUI() {
@@ -248,31 +247,4 @@
             document.getElementById('progress-bar').style.width = (sum/total*100) + '%';
             
             if(sum >= total) {
-                tg.MainButton.setText("🎉 Цель выполнена!");
-                tg.MainButton.show();
-                tg.MainButton.color = "#2ecc71";
-            } else {
-                tg.MainButton.hide();
-            }
-        }
-
-        function save() {
-            const str = JSON.stringify(appData);
-            tg.CloudStorage.setItem(storageKey, str);
-            localStorage.setItem(storageKey, str);
-        }
-
-        function resetProgress() {
-            tg.showConfirm("Сбросить прогресс и выбрать уровень заново?", (ok) => {
-                if(ok) {
-                    localStorage.removeItem(storageKey);
-                    tg.CloudStorage.removeItem(storageKey);
-                    location.reload();
-                }
-            });
-        }
-
-        init();
-    </script>
-</body>
-</html>
+                tg.MainButton.setText("🎉 Ц
